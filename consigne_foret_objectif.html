@@ -59,30 +59,29 @@ function startAmbience() {
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   var master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
 
-  // Nappes mystérieuses — démarrent immédiatement
-  function playDrone() {
-    var notes = [55, 82, 110, 73];
-    notes.forEach(function(freq, i) {
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      var filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass'; filter.frequency.value = 400;
-      o.type = 'sine';
-      o.frequency.value = freq;
-      // Monte immédiatement dès le premier clic
-      g.gain.setValueAtTime(0, ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.3);
-      g.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 8);
-      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 16);
-      g.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 28);
-      o.connect(filter); filter.connect(g); g.connect(master);
-      o.start(); o.stop(ctx.currentTime + 30);
-    });
-    setTimeout(playDrone, 28000);
-  }
-  playDrone();
+  // Nappes mystérieuses — durée infinie, pas de relance
+  var notes = [55, 82, 110, 73];
+  notes.forEach(function(freq) {
+    var o = ctx.createOscillator();
+    var g = ctx.createGain();
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 400;
+    o.type = 'sine';
+    o.frequency.value = freq;
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.05, ctx.currentTime + 0.3);
+    // Légère modulation du volume pour éviter la monotonie
+    var lfo = ctx.createOscillator();
+    var lfoGain = ctx.createGain();
+    lfo.frequency.value = 0.05 + Math.random() * 0.05;
+    lfoGain.gain.value = 0.02;
+    lfo.connect(lfoGain); lfoGain.connect(g.gain);
+    lfo.start();
+    o.connect(filter); filter.connect(g); g.connect(master);
+    o.start(); // pas de stop — tourne indéfiniment
+  });
 
-  // Mélodie mystérieuse — première note immédiate
+  // Mélodie mystérieuse
   function mysteryNote(delay) {
     if(!started) return;
     setTimeout(function(){
@@ -99,9 +98,9 @@ function startAmbience() {
       mysteryNote(2500 + Math.random() * 4000);
     }, delay);
   }
-  mysteryNote(0); // démarre immédiatement
+  mysteryNote(0);
 
-  // Oiseaux — premier chant immédiat
+  // Oiseaux
   function bird(delay) {
     if(!started) return;
     setTimeout(function(){
@@ -118,9 +117,9 @@ function startAmbience() {
       bird(5000 + Math.random()*8000);
     }, delay);
   }
-  bird(200); // démarre après 0.2 secondes
+  bird(200);
 
-  // Singes — premier cri après 3 secondes
+  // Singes
   function monkey(delay) {
     if(!started) return;
     setTimeout(function(){
@@ -141,7 +140,7 @@ function startAmbience() {
       monkey(10000 + Math.random()*18000);
     }, delay);
   }
-  monkey(3000); // premier singe après 3 secondes
+  monkey(3000);
 }
 document.body.addEventListener('click', startAmbience);
 </script>
