@@ -1,29 +1,29 @@
-
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Consigne - La Forêt des Archétypes</title>
 <style>
-  #slide {
-    background: #0a180a;
-    border-radius: 14px;
-    padding: 3.5rem 4.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    font-family: Georgia, serif;
-  }
-  .tree-deco { font-size: 36px; letter-spacing: 22px; margin-bottom: 1.75rem; opacity: 0.6; }
-  .title { font-size: 30px; font-weight: 500; color: #a0e080; margin-bottom: 1.75rem; letter-spacing: .04em; }
-  .divider { width: 80px; height: 1px; background: #3a6a3a; margin: 0 auto 1.75rem; }
-  .body { font-size: 19px; line-height: 2.1; color: #c8e8b8; max-width: 620px; }
-  .body em { color: #8ade80; font-style: italic; }
-  .objectif-wrap { margin-top: 2rem; background: rgba(30,80,30,0.45); border: 1px solid #2a6a2a; border-radius: 12px; padding: 1.25rem 2rem; max-width: 600px; width: 100%; }
-  .objectif-label { font-size: 12px; font-weight: 500; color: #5a9a5a; letter-spacing: .12em; text-transform: uppercase; font-family: system-ui, sans-serif; margin-bottom: .6rem; }
-  .objectif-text { font-size: 17px; line-height: 1.75; color: #a0d890; font-family: system-ui, sans-serif; }
-  .objectif-text em { color: #8ade80; font-style: italic; }
-  .note { margin-top: 1.75rem; font-size: 15px; color: #4a8a4a; font-family: system-ui, sans-serif; letter-spacing: .05em; }
-  .bottom-deco { margin-top: 1.75rem; font-size: 26px; letter-spacing: 18px; opacity: 0.35; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a180a;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;font-family:Georgia,serif;cursor:pointer}
+.slide{background:#0a180a;border:1px solid #1a4a1a;border-radius:14px;padding:3.5rem 4.5rem;max-width:800px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.tree-deco{font-size:36px;letter-spacing:22px;margin-bottom:1.75rem;opacity:0.6}
+.title{font-size:32px;font-weight:500;color:#a0e080;margin-bottom:1.75rem;letter-spacing:.04em}
+.divider{width:80px;height:1px;background:#3a6a3a;margin:0 auto 1.75rem}
+.body{font-size:20px;line-height:2.1;color:#c8e8b8;max-width:620px}
+.body em{color:#8ade80;font-style:italic}
+.objectif-wrap{margin-top:2rem;background:rgba(30,80,30,0.45);border:1px solid #2a6a2a;border-radius:12px;padding:1.25rem 2rem;max-width:600px;width:100%}
+.objectif-label{font-size:12px;font-weight:500;color:#5a9a5a;letter-spacing:.12em;text-transform:uppercase;font-family:system-ui,sans-serif;margin-bottom:.6rem}
+.objectif-text{font-size:18px;line-height:1.75;color:#a0d890;font-family:system-ui,sans-serif}
+.objectif-text em{color:#8ade80;font-style:italic}
+.note{margin-top:1.75rem;font-size:15px;color:#4a8a4a;font-family:system-ui,sans-serif;letter-spacing:.05em}
+.bottom-deco{margin-top:1.75rem;font-size:26px;letter-spacing:18px;opacity:0.35}
+.sound-hint{position:fixed;bottom:20px;right:20px;background:rgba(10,40,10,0.85);border:1px solid #2a6a2a;border-radius:8px;padding:8px 14px;font-size:12px;color:#5a9a5a;font-family:system-ui,sans-serif}
 </style>
-<div id="slide">
+</head>
+<body>
+<div class="slide">
   <div class="tree-deco">🌲 🌿 🌲</div>
   <div class="title">Bienvenue dans la Forêt des Archétypes</div>
   <div class="divider"></div>
@@ -40,12 +40,50 @@
   <div class="objectif-wrap">
     <div class="objectif-label">Objectif du jeu</div>
     <div class="objectif-text">
-      Explorer tes tendances naturelles à travers une histoire immersive<br>
-      et découvrir ton <em>archétype de personnalité</em> —<br>
-      la façon unique dont tu perçois le monde et interagis avec lui.<br>
+      Explorer tes tendances naturelles à travers une histoire immersive
+      et découvrir ton <em>archétype de personnalité</em> —
+      la façon unique dont tu perçois le monde et interagis avec lui.
       Ce résultat sera le point de départ de notre réflexion ensemble.
     </div>
   </div>
   <div class="note">10 clairières · Prends ton temps · Fais confiance à ton instinct</div>
   <div class="bottom-deco">🌿 🌿 🌿</div>
 </div>
+<div class="sound-hint" id="hint">Clique n'importe où pour activer le son</div>
+<script>
+var ctx,started=false;
+function startAmbience(){
+  if(started)return;started=true;
+  document.getElementById('hint').textContent='Son activé';
+  setTimeout(function(){document.getElementById('hint').style.display='none';},2000);
+  ctx=new(window.AudioContext||window.webkitAudioContext)();
+  var master=ctx.createGain();master.gain.value=0.5;master.connect(ctx.destination);
+  function noise(dur){var b=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;}
+  var wg=ctx.createGain();wg.gain.value=0.5;wg.connect(master);
+  var ws=ctx.createBufferSource();ws.buffer=noise(4);ws.loop=true;
+  var wf=ctx.createBiquadFilter();wf.type='bandpass';wf.frequency.value=400;wf.Q.value=0.5;
+  ws.connect(wf);wf.connect(wg);ws.start();
+  var lfo=ctx.createOscillator();var lg=ctx.createGain();lfo.frequency.value=0.12;lg.gain.value=0.25;lfo.connect(lg);lg.connect(wg.gain);lfo.start();
+  var ag=ctx.createGain();ag.gain.value=0.3;ag.connect(master);
+  var as2=ctx.createBufferSource();as2.buffer=noise(3);as2.loop=true;
+  var af=ctx.createBiquadFilter();af.type='highpass';af.frequency.value=1200;
+  var af2=ctx.createBiquadFilter();af2.type='lowpass';af2.frequency.value=3000;
+  as2.connect(af);af.connect(af2);af2.connect(ag);as2.start();
+  function bird(){
+    if(!started)return;
+    setTimeout(function(){
+      [880,1100,990,1320].forEach(function(f,i){setTimeout(function(){
+        var o=ctx.createOscillator(),g=ctx.createGain();
+        o.frequency.value=f*(0.9+Math.random()*0.2);o.type='sine';
+        g.gain.setValueAtTime(0,ctx.currentTime);g.gain.linearRampToValueAtTime(0.1,ctx.currentTime+0.05);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
+        o.connect(g);g.connect(master);o.start();o.stop(ctx.currentTime+0.35);
+      },i*130);});
+      bird();
+    },3000+Math.random()*6000);
+  }
+  bird();
+}
+document.body.addEventListener('click',startAmbience);
+</script>
+</body>
+</html>
