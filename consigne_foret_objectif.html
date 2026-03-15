@@ -51,39 +51,78 @@ body{background:#0a180a;min-height:100vh;display:flex;align-items:center;justify
 </div>
 <div class="sound-hint" id="hint">Clique n'importe où pour activer le son</div>
 <script>
-var ctx,started=false;
-function startAmbience(){
-  if(started)return;started=true;
-  document.getElementById('hint').textContent='Son activé';
-  setTimeout(function(){document.getElementById('hint').style.display='none';},2000);
-  ctx=new(window.AudioContext||window.webkitAudioContext)();
-  var master=ctx.createGain();master.gain.value=0.5;master.connect(ctx.destination);
-  function noise(dur){var b=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;}
-  var wg=ctx.createGain();wg.gain.value=0.5;wg.connect(master);
-  var ws=ctx.createBufferSource();ws.buffer=noise(4);ws.loop=true;
-  var wf=ctx.createBiquadFilter();wf.type='bandpass';wf.frequency.value=400;wf.Q.value=0.5;
-  ws.connect(wf);wf.connect(wg);ws.start();
-  var lfo=ctx.createOscillator();var lg=ctx.createGain();lfo.frequency.value=0.12;lg.gain.value=0.25;lfo.connect(lg);lg.connect(wg.gain);lfo.start();
-  var ag=ctx.createGain();ag.gain.value=0.3;ag.connect(master);
-  var as2=ctx.createBufferSource();as2.buffer=noise(3);as2.loop=true;
-  var af=ctx.createBiquadFilter();af.type='highpass';af.frequency.value=1200;
-  var af2=ctx.createBiquadFilter();af2.type='lowpass';af2.frequency.value=3000;
-  as2.connect(af);af.connect(af2);af2.connect(ag);as2.start();
-  function bird(){
-    if(!started)return;
+var ctx, started = false;
+function startAmbience() {
+  if(started) return; started = true;
+  document.getElementById('hint').textContent = 'Son activé';
+  setTimeout(function(){ document.getElementById('hint').style.display='none'; }, 2000);
+  ctx = new (window.AudioContext || window.webkitAudioContext)();
+  var master = ctx.createGain(); master.gain.value = 0.4; master.connect(ctx.destination);
+
+  // Vent doux — très basses fréquences
+  function makeNoise(dur) {
+    var b = ctx.createBuffer(1, ctx.sampleRate*dur, ctx.sampleRate);
+    var d = b.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i] = Math.random()*2-1;
+    return b;
+  }
+  var wg = ctx.createGain(); wg.gain.value = 0.4; wg.connect(master);
+  var ws = ctx.createBufferSource(); ws.buffer = makeNoise(4); ws.loop = true;
+  var wf1 = ctx.createBiquadFilter(); wf1.type = 'lowpass'; wf1.frequency.value = 180;
+  var wf2 = ctx.createBiquadFilter(); wf2.type = 'lowpass'; wf2.frequency.value = 120;
+  ws.connect(wf1); wf1.connect(wf2); wf2.connect(wg); ws.start();
+  var lfo = ctx.createOscillator(); var lg = ctx.createGain();
+  lfo.frequency.value = 0.08; lg.gain.value = 0.2;
+  lfo.connect(lg); lg.connect(wg.gain); lfo.start();
+
+  // Feuilles — fréquences moyennes très douces
+  var fg = ctx.createGain(); fg.gain.value = 0.15; fg.connect(master);
+  var fs = ctx.createBufferSource(); fs.buffer = makeNoise(3); fs.loop = true;
+  var ff1 = ctx.createBiquadFilter(); ff1.type = 'bandpass'; ff1.frequency.value = 800; ff1.Q.value = 0.8;
+  var ff2 = ctx.createBiquadFilter(); ff2.type = 'lowpass'; ff2.frequency.value = 1200;
+  fs.connect(ff1); ff1.connect(ff2); ff2.connect(fg); fs.start();
+  var lfo2 = ctx.createOscillator(); var lg2 = ctx.createGain();
+  lfo2.frequency.value = 0.25; lg2.gain.value = 0.1;
+  lfo2.connect(lg2); lg2.connect(fg.gain); lfo2.start();
+
+  // Oiseaux forestiers
+  function bird() {
+    if(!started) return;
     setTimeout(function(){
-      [880,1100,990,1320].forEach(function(f,i){setTimeout(function(){
-        var o=ctx.createOscillator(),g=ctx.createGain();
-        o.frequency.value=f*(0.9+Math.random()*0.2);o.type='sine';
-        g.gain.setValueAtTime(0,ctx.currentTime);g.gain.linearRampToValueAtTime(0.1,ctx.currentTime+0.05);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.3);
-        o.connect(g);g.connect(master);o.start();o.stop(ctx.currentTime+0.35);
-      },i*130);});
+      var notes = [659, 784, 659, 880, 784];
+      notes.forEach(function(f, i){ setTimeout(function(){
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = f * (0.95 + Math.random()*0.1);
+        o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.07, ctx.currentTime+0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.25);
+        o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.3);
+      }, i*110); });
       bird();
-    },3000+Math.random()*6000);
+    }, 4000 + Math.random()*7000);
   }
   bird();
+
+  // Grillon doux la nuit
+  function cricket() {
+    if(!started) return;
+    setTimeout(function(){
+      for(var i=0;i<3;i++) { (function(i){setTimeout(function(){
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.frequency.value = 3200 + Math.random()*200;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0, ctx.currentTime);
+        g.gain.linearRampToValueAtTime(0.03, ctx.currentTime+0.01);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.08);
+        o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.1);
+      }, i*80);})(i); }
+      cricket();
+    }, 800 + Math.random()*1500);
+  }
+  cricket();
 }
-document.body.addEventListener('click',startAmbience);
+document.body.addEventListener('click', startAmbience);
 </script>
 </body>
 </html>
