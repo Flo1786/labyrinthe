@@ -59,9 +59,9 @@ function startAmbience() {
   ctx = new (window.AudioContext || window.webkitAudioContext)();
   var master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
 
-  // Musique mystérieuse — nappes de notes longues et graves
+  // Nappes mystérieuses — démarrent immédiatement
   function playDrone() {
-    var notes = [55, 82, 110, 73]; // La grave, Mi, La médium, Ré
+    var notes = [55, 82, 110, 73];
     notes.forEach(function(freq, i) {
       var o = ctx.createOscillator();
       var g = ctx.createGain();
@@ -69,41 +69,40 @@ function startAmbience() {
       filter.type = 'lowpass'; filter.frequency.value = 400;
       o.type = 'sine';
       o.frequency.value = freq;
+      // Monte immédiatement dès le premier clic
       g.gain.setValueAtTime(0, ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 3 + i);
-      g.gain.linearRampToValueAtTime(0.03, ctx.currentTime + 10 + i);
-      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 18 + i);
+      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.3);
+      g.gain.linearRampToValueAtTime(0.04, ctx.currentTime + 8);
+      g.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 16);
       g.gain.linearRampToValueAtTime(0.0, ctx.currentTime + 28);
       o.connect(filter); filter.connect(g); g.connect(master);
       o.start(); o.stop(ctx.currentTime + 30);
-      setTimeout(playDrone, 28000);
     });
+    setTimeout(playDrone, 28000);
   }
   playDrone();
 
-  // Mélodie mystérieuse — notes éparses et planantes
-  function mysteryNote() {
+  // Mélodie mystérieuse — première note immédiate
+  function mysteryNote(delay) {
     if(!started) return;
     setTimeout(function(){
-      var scale = [196, 220, 246, 261, 293, 329, 349]; // gamme mineure
+      var scale = [196, 220, 246, 261, 293, 329, 349];
       var freq = scale[Math.floor(Math.random() * scale.length)];
-      var o = ctx.createOscillator();
-      var g = ctx.createGain();
-      var rev = ctx.createConvolver();
+      var o = ctx.createOscillator(), g = ctx.createGain();
       o.type = 'sine';
       o.frequency.value = freq;
       g.gain.setValueAtTime(0, ctx.currentTime);
-      g.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.3);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 3);
+      g.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 0.2);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
       o.connect(g); g.connect(master);
-      o.start(); o.stop(ctx.currentTime + 3.5);
-      mysteryNote();
-    }, 2500 + Math.random() * 4000);
+      o.start(); o.stop(ctx.currentTime + 3);
+      mysteryNote(2500 + Math.random() * 4000);
+    }, delay);
   }
-  mysteryNote();
+  mysteryNote(0); // démarre immédiatement
 
-  // Oiseaux mystérieux
-  function bird() {
+  // Oiseaux — premier chant immédiat
+  function bird(delay) {
     if(!started) return;
     setTimeout(function(){
       var notes = [523, 587, 523, 659, 587];
@@ -116,13 +115,13 @@ function startAmbience() {
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
         o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+0.45);
       }, i*150); });
-      bird();
-    }, 5000 + Math.random()*8000);
+      bird(5000 + Math.random()*8000);
+    }, delay);
   }
-  bird();
+  bird(200); // démarre après 0.2 secondes
 
-  // Singes — cris graves et espacés
-  function monkey() {
+  // Singes — premier cri après 3 secondes
+  function monkey(delay) {
     if(!started) return;
     setTimeout(function(){
       var numCris = 2 + Math.floor(Math.random()*2);
@@ -139,10 +138,10 @@ function startAmbience() {
         o.connect(g); g.connect(master);
         o.start(); o.stop(ctx.currentTime+0.3);
       }, i*350); })(i); }
-      monkey();
-    }, 10000 + Math.random()*18000);
+      monkey(10000 + Math.random()*18000);
+    }, delay);
   }
-  monkey();
+  monkey(3000); // premier singe après 3 secondes
 }
 document.body.addEventListener('click', startAmbience);
 </script>
