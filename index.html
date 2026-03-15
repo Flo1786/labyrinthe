@@ -50,27 +50,139 @@ canvas#minimap{display:block}
   <div id="scene-panel"></div>
 </div>
 <script>
-var W=720,H=380,ctx2=null,masterGain,windGain,waterGain,birdsPlaying=false;
+var W=720,H=380,actx=null,masterGain,started=false;
+
 function initAmbience(){
-  ctx2=new(window.AudioContext||window.webkitAudioContext)();
-  masterGain=ctx2.createGain();masterGain.gain.value=0.45;masterGain.connect(ctx2.destination);
-  function noise(dur){var b=ctx2.createBuffer(1,ctx2.sampleRate*dur,ctx2.sampleRate);var d=b.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;return b;}
-  windGain=ctx2.createGain();windGain.gain.value=0.55;windGain.connect(masterGain);
-  var ws=ctx2.createBufferSource();ws.buffer=noise(4);ws.loop=true;
-  var wf=ctx2.createBiquadFilter();wf.type='bandpass';wf.frequency.value=400;wf.Q.value=0.5;
-  ws.connect(wf);wf.connect(windGain);ws.start();
-  var lfo=ctx2.createOscillator();var lg=ctx2.createGain();lfo.frequency.value=0.12;lg.gain.value=0.25;lfo.connect(lg);lg.connect(windGain.gain);lfo.start();
-  waterGain=ctx2.createGain();waterGain.gain.value=0.35;waterGain.connect(masterGain);
-  var as2=ctx2.createBufferSource();as2.buffer=noise(3);as2.loop=true;
-  var af=ctx2.createBiquadFilter();af.type='highpass';af.frequency.value=1200;
-  var af2=ctx2.createBiquadFilter();af2.type='lowpass';af2.frequency.value=3000;
-  as2.connect(af);af.connect(af2);af2.connect(waterGain);as2.start();
-  birdsPlaying=true;scheduleBird();
+  if(started)return;started=true;
+  actx=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=actx.createGain();masterGain.gain.value=0.45;masterGain.connect(actx.destination);
+
+  // Nappes mystérieuses — durée infinie
+  var notes=[55,82,110,73];
+  notes.forEach(function(freq){
+    var o=actx.createOscillator(),g=actx.createGain(),f=actx.createBiquadFilter();
+    f.type='lowpass';f.frequency.value=400;o.type='sine';o.frequency.value=freq;
+    g.gain.setValueAtTime(0,actx.currentTime);
+    g.gain.linearRampToValueAtTime(0.04,actx.currentTime+0.3);
+    var lfo=actx.createOscillator(),lg=actx.createGain();
+    lfo.frequency.value=0.05+Math.random()*0.05;lg.gain.value=0.015;
+    lfo.connect(lg);lg.connect(g.gain);lfo.start();
+    o.connect(f);f.connect(g);g.connect(masterGain);o.start();
+  });
+
+  // Mélodie mystérieuse
+  function mysteryNote(delay){
+    if(!started)return;
+    setTimeout(function(){
+      var scale=[196,220,246,261,293,329,349];
+      var freq=scale[Math.floor(Math.random()*scale.length)];
+      var o=actx.createOscillator(),g=actx.createGain();
+      o.type='sine';o.frequency.value=freq;
+      g.gain.setValueAtTime(0,actx.currentTime);
+      g.gain.linearRampToValueAtTime(0.07,actx.currentTime+0.2);
+      g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+2.5);
+      o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+3);
+      mysteryNote(2500+Math.random()*4000);
+    },delay);
+  }
+  mysteryNote(0);
+
+  // Oiseaux tropicaux
+  function bird(delay){
+    if(!started)return;
+    setTimeout(function(){
+      var patterns=[[523,659,587,784],[880,784,659,523,587],[392,523,440,587]];
+      var pat=patterns[Math.floor(Math.random()*patterns.length)];
+      pat.forEach(function(f,i){setTimeout(function(){
+        var o=actx.createOscillator(),g=actx.createGain();
+        o.frequency.value=f*(0.95+Math.random()*0.1);o.type='sine';
+        g.gain.setValueAtTime(0,actx.currentTime);
+        g.gain.linearRampToValueAtTime(0.06,actx.currentTime+0.03);
+        g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.35);
+        o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.4);
+      },i*130);});
+      bird(4000+Math.random()*7000);
+    },delay);
+  }
+  bird(300);
+
+  // Singes
+  function monkey(delay){
+    if(!started)return;
+    setTimeout(function(){
+      var n=2+Math.floor(Math.random()*3);
+      for(var i=0;i<n;i++){(function(i){setTimeout(function(){
+        var o=actx.createOscillator(),g=actx.createGain();
+        var bf=160+Math.random()*60;
+        o.frequency.setValueAtTime(bf,actx.currentTime);
+        o.frequency.linearRampToValueAtTime(bf*1.5,actx.currentTime+0.1);
+        o.frequency.linearRampToValueAtTime(bf*0.8,actx.currentTime+0.22);
+        o.type='sawtooth';
+        g.gain.setValueAtTime(0,actx.currentTime);
+        g.gain.linearRampToValueAtTime(0.09,actx.currentTime+0.05);
+        g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.28);
+        o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.3);
+      },i*350);})(i);}
+      monkey(10000+Math.random()*15000);
+    },delay);
+  }
+  monkey(3000);
+
+  // Grenouilles tropicales
+  function frog(delay){
+    if(!started)return;
+    setTimeout(function(){
+      var o=actx.createOscillator(),g=actx.createGain();
+      o.frequency.value=180+Math.random()*40;o.type='square';
+      g.gain.setValueAtTime(0,actx.currentTime);
+      g.gain.linearRampToValueAtTime(0.04,actx.currentTime+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.15);
+      o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.18);
+      frog(1500+Math.random()*4000);
+    },delay);
+  }
+  frog(1000);
+
+  // Insectes tropicaux — stridulation douce
+  function insect(delay){
+    if(!started)return;
+    setTimeout(function(){
+      var o=actx.createOscillator(),g=actx.createGain();
+      o.frequency.value=2800+Math.random()*400;o.type='sine';
+      g.gain.setValueAtTime(0,actx.currentTime);
+      g.gain.linearRampToValueAtTime(0.025,actx.currentTime+0.05);
+      g.gain.linearRampToValueAtTime(0.025,actx.currentTime+0.3);
+      g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.5);
+      o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.55);
+      insect(600+Math.random()*1200);
+    },delay);
+  }
+  insect(500);
 }
-function scheduleBird(){if(!birdsPlaying)return;setTimeout(function(){playBird();scheduleBird();},3000+Math.random()*6000);}
-function playBird(){if(!ctx2)return;[880,1100,990,1320].forEach(function(f,i){setTimeout(function(){var o=ctx2.createOscillator(),g=ctx2.createGain();o.frequency.value=f*(0.9+Math.random()*0.2);o.type='sine';g.gain.setValueAtTime(0,ctx2.currentTime);g.gain.linearRampToValueAtTime(0.08,ctx2.currentTime+0.05);g.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+0.3);o.connect(g);g.connect(masterGain);o.start();o.stop(ctx2.currentTime+0.35);},i*130);});}
-function playClick(type){if(!ctx2)return;try{var o=ctx2.createOscillator(),g=ctx2.createGain();var f={door:220,vine:440,river:330,tree:180};o.frequency.value=f[type]||300;o.type='sine';g.gain.setValueAtTime(0.15,ctx2.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+0.4);o.connect(g);g.connect(masterGain);o.start();o.stop(ctx2.currentTime+0.4);}catch(e){}}
-function playReveal(){if(!ctx2)return;[261,329,392,523].forEach(function(f,i){setTimeout(function(){var o=ctx2.createOscillator(),g=ctx2.createGain();o.frequency.value=f;o.type='triangle';g.gain.setValueAtTime(0.1,ctx2.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx2.currentTime+0.8);o.connect(g);g.connect(masterGain);o.start();o.stop(ctx2.currentTime+0.8);},i*150);});}
+
+function playClick(type){
+  if(!actx)return;
+  try{
+    var o=actx.createOscillator(),g=actx.createGain();
+    var f={door:220,vine:440,river:330,tree:180};
+    o.frequency.value=f[type]||300;o.type='sine';
+    g.gain.setValueAtTime(0.15,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.4);
+    o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.4);
+  }catch(e){}
+}
+
+function playReveal(){
+  if(!actx)return;
+  [261,329,392,523].forEach(function(f,i){setTimeout(function(){
+    var o=actx.createOscillator(),g=actx.createGain();
+    o.frequency.value=f;o.type='triangle';
+    g.gain.setValueAtTime(0.1,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.8);
+    o.connect(g);g.connect(masterGain);o.start();o.stop(actx.currentTime+0.8);
+  },i*150);});
+}
+
 var STEPS=[
 {scene:"Tu te retrouves au seuil d'une forêt inconnue. Le silence t'enveloppe. Que ressens-tu en premier ?",elements:[
 {type:"door",x:.18,y:.48,w:.13,h:.30,label:"Pousser la porte de bois",text:"Une curiosité vive — que cache cette forêt ?",scores:{Tisserand:2,Oracle:1},color:"#8B5E3C"},
@@ -123,6 +235,7 @@ var STEPS=[
 {type:"river",x:.60,y:.63,w:.19,h:.12,label:"Offrir l'eau de la rivière",text:"Une présence — la chaleur de m'avoir connu.",scores:{Racine:3},color:"#1a4aaa"},
 {type:"tree",x:.79,y:.24,w:.11,h:.48,label:"Graver ton nom dans l'arbre",text:"Une vérité, dite avec soin.",scores:{Oracle:3},color:"#3a6a1a"}]}
 ];
+
 var ARCHETYPES={
 Flamme:{label:"La Flamme",badge:"Audace & Élan",desc:"Tu es celui ou celle qui initie. Là où les autres hésitent, tu avances.",traits:["Courageux·se","Initiateur·trice","Spontané·e","Inspirant·e","Indomptable"],forces:"Ta capacité à mettre les choses en mouvement est rare.",ombre:"Ton intensité peut brûler ceux qui t'entourent si elle n'est pas canalisée.",coaching:"Utilise ton élan comme ressource, mais apprends à créer des pauses.",questions:["Dans quels moments as-tu agi avec une audace dont tu es fier·e ?","Qu'est-ce qui t'empêche parfois de ralentir ?","Comment ton énergie influence-t-elle les personnes autour de toi ?"]},
 Tisserand:{label:"Le Tisserand",badge:"Lien & Stratégie",desc:"Tu es fait·e pour relier les gens, les idées, les mondes.",traits:["Connecteur·trice","Stratégique","Intuitif·ve","Fédérateur·trice","Architecte"],forces:"Tu perçois les dynamiques de groupe avec une finesse rare.",ombre:"À trop vouloir connecter, tu peux t'oublier toi-même.",coaching:"Identifie ce que tu veux tisser pour toi-même.",questions:["Quels liens as-tu créés dont tu es fier·e ?","Y a-t-il des situations où tu t'es perdu·e en voulant tout relier ?","Qu'est-ce qui te connecte à toi-même ?"]},
@@ -131,6 +244,7 @@ Racine:{label:"La Racine",badge:"Présence & Ancrage",desc:"Tu es celui ou celle
 Reflet:{label:"Le Reflet",badge:"Création & Mémoire",desc:"Tu captes ce que les autres ne voient pas. Tu transformes l'expérience en forme.",traits:["Créatif·ve","Sensible","Observateur·trice","Expressif·ve","Unique"],forces:"Tu as une sensibilité rare au détail et à l'atmosphère.",ombre:"Ta sensibilité peut te rendre vulnérable à la surcharge émotionnelle.",coaching:"Utilise ta créativité comme outil de transformation.",questions:["Qu'est-ce que tu as créé qui t'a surpris toi-même ?","Comment utilises-tu ton regard unique au quotidien ?","Qu'est-ce que tu voudrais laisser comme trace ?"]},
 Passeur:{label:"Le Passeur",badge:"Soin & Transmission",desc:"Tu existes dans la relation à l'autre. Accompagner, soutenir, transmettre.",traits:["Empathique","Généreux·se","À l'écoute","Transmetteur·trice","Dévoué·e"],forces:"Tu sais tenir l'espace pour les autres d'une façon que peu savent faire.",ombre:"À force de donner, tu peux t'oublier.",coaching:"Apprends à recevoir autant que tu donnes.",questions:["Qui t'a accompagné·e de façon marquante ?","Prends-tu soin de toi avec la même générosité ?","Qu'est-ce que tu aimerais que quelqu'un fasse pour toi ?"]}
 };
+
 function sr(s){return function(){s=(s*16807)%2147483647;return(s-1)/2147483646;}}
 var rng=sr(77),TREES=[];for(var i=0;i<70;i++)TREES.push({x:rng(),y:rng(),s:rng()*0.7+0.5,v:Math.floor(rng()*3)});
 var MN=[{x:.1,y:.9},{x:.2,y:.75},{x:.15,y:.58},{x:.28,y:.44},{x:.42,y:.35},{x:.55,y:.42},{x:.68,y:.32},{x:.78,y:.48},{x:.72,y:.62},{x:.6,y:.74},{x:.48,y:.65}];
@@ -159,7 +273,7 @@ cv.addEventListener('touchend',function(e){e.preventDefault();var r=cv.getBoundi
 function topK(){return Object.entries(scores).sort(function(a,b){return b[1]-a[1];})[0][0];}
 function setTab(t){tab=t;sR(document.getElementById('scene-panel'));}
 function rP(){var p=document.getElementById('scene-panel');if(step>=STEPS.length){sR(p);return;}p.innerHTML='<div class="sinfo">Clairière '+(step+1)+' sur '+STEPS.length+'</div><div class="slabel">Ce que tu vis</div><div class="stext">'+STEPS[step].scene+'</div><div class="shint">Clique sur une porte, une liane, une rivière ou un arbre.</div>';}
-function sR(p){var key=topK(),a=ARCHETYPES[key];var tb='<div class="tab-bar">'+['profil','détail','réflexion'].map(function(t){return'<button class="tab'+(tab===t?' active':'')+'" onclick="setTab(''+t+'')">'+t.charAt(0).toUpperCase()+t.slice(1)+'</button>';}).join('')+'</div>';var c='';if(tab==='profil')c='<div class="badge">'+a.badge+'</div><div class="arch-name">'+a.label+'</div><div class="arch-desc">'+a.desc+'</div><div class="sec">Tes traits</div><div class="traits">'+a.traits.map(function(t){return'<span class="trait">'+t+'</span>';}).join('')+'</div>';else if(tab==='détail')c='<div class="arch-name" style="font-size:18px;margin-bottom:1rem">'+a.label+'</div><div class="sec">Tes forces</div><div class="info-block"><p>'+a.forces+'</p></div><div class="sec">Ton ombre</div><div class="info-block"><p>'+a.ombre+'</p></div><div class="sec">En coaching</div><div class="info-block"><p>'+a.coaching+'</p></div>';else c='<div class="arch-name" style="font-size:18px;margin-bottom:.25rem">'+a.label+'</div><p style="font-size:13px;color:#4a8a4a;margin-bottom:1.25rem">Questions de réflexion :</p>'+a.questions.map(function(q,i){return'<div class="q-card"><div class="q-num">Question '+(i+1)+'</div><p>'+q+'</p></div>';}).join('');p.innerHTML=tb+'<div class="result-card">'+c+'</div><button class="restart-btn" onclick="restart()">Recommencer</button>';}
+function sR(p){var key=topK(),a=ARCHETYPES[key];var tb='<div class="tab-bar">'+['profil','détail','réflexion'].map(function(t){return'<button class="tab'+(tab===t?' active':'')+'" onclick="setTab(\''+t+'\')">'+t.charAt(0).toUpperCase()+t.slice(1)+'</button>';}).join('')+'</div>';var c='';if(tab==='profil')c='<div class="badge">'+a.badge+'</div><div class="arch-name">'+a.label+'</div><div class="arch-desc">'+a.desc+'</div><div class="sec">Tes traits</div><div class="traits">'+a.traits.map(function(t){return'<span class="trait">'+t+'</span>';}).join('')+'</div>';else if(tab==='détail')c='<div class="arch-name" style="font-size:18px;margin-bottom:1rem">'+a.label+'</div><div class="sec">Tes forces</div><div class="info-block"><p>'+a.forces+'</p></div><div class="sec">Ton ombre</div><div class="info-block"><p>'+a.ombre+'</p></div><div class="sec">En coaching</div><div class="info-block"><p>'+a.coaching+'</p></div>';else c='<div class="arch-name" style="font-size:18px;margin-bottom:.25rem">'+a.label+'</div><p style="font-size:13px;color:#4a8a4a;margin-bottom:1.25rem">Questions de réflexion :</p>'+a.questions.map(function(q,i){return'<div class="q-card"><div class="q-num">Question '+(i+1)+'</div><p>'+q+'</p></div>';}).join('');p.innerHTML=tb+'<div class="result-card">'+c+'</div><button class="restart-btn" onclick="restart()">Recommencer</button>';}
 function restart(){scores={Flamme:0,Tisserand:0,Oracle:0,Racine:0,Reflet:0,Passeur:0};step=0;tab='profil';hov=null;dScene();rP();}
 document.getElementById('overlay').addEventListener('click',function(){
   this.classList.add('fade');
